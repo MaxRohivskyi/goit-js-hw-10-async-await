@@ -1,7 +1,7 @@
 import debounce from 'lodash.debounce';
 import { Notify } from 'notiflix';
 import 'notiflix/dist/notiflix-3.2.5.min.css';
-import fetchCountries from './js/fetchCountries';
+import countryApi from './js/fetchCountries';
 import refs from './js/get-refs';
 import './css/styles.css';
 
@@ -11,29 +11,34 @@ const { inputCountry, countryList, countryInfo } = refs;
 
 inputCountry.addEventListener('input', debounce(onInputCountry, DEBOUNCE_DELAY));
 
+const countryApiService = new countryApi();
+
 function onInputCountry() {
+    if (this.name.value === '') {
+        return Notify.failure('Please fill in the input field!');
+    };
     const searchCountryName = inputCountry.value.trim();
     reset()
 
-    fetchCountries(searchCountryName)
+    countryApiService.fetchCountries(searchCountryName)
         .then(renderCountryCard)
         .catch(onFetchErrorUndefined)
         .finally(() => {
             if (!searchCountryName) {
                 reset();
                 return
-            }
+            };
         });
 };
 
 function renderCountryCard(response) {
-    const countryListMarkup = response.map(country =>
+    const countryListMarkup = response.data.map(country =>
         `<li class="country-card">
             <img class="country-item__flag" src="${country.flags.svg}" width="50px" alt="${country.name.official}">
             <p class='card-item__name'>${country.name.official}</p>
         </li>`).join('');
     
-    const countryCardMarkup = response.map(country =>
+    const countryCardMarkup = response.data.map(country =>
         `<div class='country-card'>
             <img class='country-item__flag' src="${country.flags.svg}" width="50px" alt="${country.name.official}"/>
             <h1 class='card-title'>${country.name.official}</h1>
@@ -60,7 +65,7 @@ function renderCountryCard(response) {
             </ul>`
     );
 
-    let quantityCountry = response.length;
+    let quantityCountry = response.data.length;
 
     if (quantityCountry > 10) {
         onFetchToMuchCountries();
